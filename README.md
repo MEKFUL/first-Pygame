@@ -1,4 +1,4 @@
-#my pygame shooter
+# my pygame shooter
 
 ### install 
 
