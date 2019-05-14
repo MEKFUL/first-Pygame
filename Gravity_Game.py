@@ -1,23 +1,10 @@
 """
-
 author: LennyLobster
-
-
 email: lenny.lobster@a1.net
-
-
 contact: +43 664 5165165
-
-
 license: gpl, see http://www.gnu.org/licenses/gpl-3.0.de.html
-
-
 download: https://github.com/LennyLobster1/GravityGame
-
-
 idea: python3/pygame 3d vector rts game
-
-
 """
 
 import pygame
