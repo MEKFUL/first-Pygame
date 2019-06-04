@@ -436,7 +436,7 @@ class Ufo(VectorSprite):
         
     def update(self,seconds):
         VectorSprite.update(self,seconds)
-        if random.random()<0.1:
+        if random.random()<0.01:
             Laser(pos=pygame.math.Vector2(self.pos.x,self.pos.y-50))
             
         
@@ -458,6 +458,10 @@ class Alien(VectorSprite):
         self.image0 = self.image.copy()
         self.rect= self.image.get_rect()
         
+    def update(self,seconds):
+        VectorSprite.update(self,seconds)
+        if random.random()<0.001:
+            BadBomb(pos=pygame.math.Vector2(self.pos.x,self.pos.y-50))
 class Player(VectorSprite):
     
     def _overwrite_parameters(self):
@@ -471,6 +475,9 @@ class Player(VectorSprite):
     def update(self, seconds):
         VectorSprite.update(self, seconds)
         self.pos.x = pygame.mouse.get_pos()[0]
+        #if self.hitpoints == 0:
+        #    self.menu_run()
+        
         
 class Star(VectorSprite):
     
@@ -508,6 +515,37 @@ class Bomb(VectorSprite):
         self.image = self.image.convert_alpha()
         self.image0 = self.image.copy()
         self.rect= self.image.get_rect()
+
+class BadBomb(VectorSprite):
+    
+    def _overwrite_parameters(self):
+            self.move = pygame.math.Vector2(0, -15)
+            #player=VectorSprite.numbers[0]
+            #diff =self.pos-player.pos
+            #a = -diff.angle_to(pygame.math.Vector2(1,0))-180
+            
+            
+            #a=random.randint(-160,-20)
+            #self.move.rotate_ip((a))
+            self.kill_on_edge = True 
+            #self.move.normalize_ip()
+            #self.move *= random.randint(50,100)
+            #self.angle=a
+            #self.max_age = 1.5
+            
+
+        
+        
+        
+    def create_image(self):
+        self.image = pygame.Surface((20,20))
+        pygame.draw.polygon(self.image, (0,50,255),((10,0), (13,5), (10,15),(7,5)))
+        self.image.set_colorkey((0,0,0))
+        self.image = self.image.convert_alpha()
+        self.image0 = self.image.copy()
+        self.rect= self.image.get_rect()
+
+
 
 class World():
 
@@ -549,11 +587,10 @@ class Viewer(object):
             #main
             "settings":        ["back", "video", "difficulty", "reset all values"],
             #settings
-            "difficulty":      ["back", "powerups", "bosshealth", "playerhealth"],
+            "difficulty":      ["back", "powerups", "playerhealth"],
             "video":           ["back", "resolution", "fullscreen"],
             #difficulty
-            "bosshealth":      ["back", "1000", "2500", "5000", "10000"],
-            "playerhealth":    ["back", "100", "250", "500", "1000"],
+            "playerhealth":    ["back","10","20","30","50", "100", "250", "500", "1000"],
             "powerups":        ["back", "laser", "bonusrockets", "heal", "shield", "speed"],
             #powerups
             "bonusrockets":    ["back", "bonusrocketincrease", "bonusrocket duration"],
@@ -634,6 +671,7 @@ class Viewer(object):
 
         self.cheatcode = ""
         self.cheatmode = False
+        self.machine_gun = False
 
     def load_sounds(self):
         #Viewer.sounds["click"]=  pygame.mixer.Sound(
@@ -689,6 +727,7 @@ class Viewer(object):
         self.bombgroup = pygame.sprite.Group()
         self.lasergroup = pygame.sprite.Group()
         self.playergroup = pygame.sprite.Group()
+        self.badbombgroup = pygame.sprite.Group()
         #self.stargroup = pygame.sprite.Group()
         #self.mousegroup = pygame.sprite.Group()
 
@@ -701,11 +740,12 @@ class Viewer(object):
         Bomb.groups = self.allgroup, self.bombgroup
         Laser.groups = self.allgroup, self.lasergroup
         Player.groups = self.allgroup, self.playergroup
+        BadBomb.groups = self.allgroup, self.badbombgroup
         Star.groups = self.allgroup  #, self.star.Group
         #self.player1 =  Player(imagename="player1", warp_on_edge=True, pos=pygame.math.Vector2(Viewer.width/2-100,-Viewer.height/2))
         #self.player2 =  Player(imagename="player2", angle=180,warp_on_edge=True, pos=pygame.math.Vector2(Viewer.width/2+100,-Viewer.height/2))
 
-        Player(pos = pygame.math.Vector2(pygame.mouse.get_pos()[0], -Viewer.height + 45))
+        self.player1=Player(pos = pygame.math.Vector2(pygame.mouse.get_pos()[0], -Viewer.height + 45))
         Ufo()
         
     def menu_run(self):
@@ -755,20 +795,27 @@ class Viewer(object):
                             #Viewer.menucommandsound.play()
                             # direct action
                         elif text == "credits":
-                            Flytext(x=700, y=400, text="by Bigm0 and BakTheBig", fontsize = 100)
-
-                        if Viewer.name == "resolution":
+                            Flytext(x=700, y=400, text="by MEKFUL and LennyLobster", fontsize = 100, max_age = 5)
+                        
+                        elif Viewer.name == "playerhealth":
+                            print(text, int(text))
+                            self.player1.hitpoints = int(text)
+                            Flytext(x=700, y=400, text="Du hast jetzt {} hitpoints".format(self.player1.hitpoints),max_age = 5)
+                        
+                        
+                        
+                        elif Viewer.name == "resolution":
                             # text is something like 800x600
                             t = text.find("x")
                             if t != -1:
                                 x = int(text[:t])
                                 y = int(text[t+1:])
-                                Viewer.width = x
+                                Viewer.width =+ x
                                 Viewer.height = y
                                 self.set_resolution()
                                 #Viewer.menucommandsound.play()
 
-                        if Viewer.name == "fullscreen":
+                        elif Viewer.name == "fullscreen":
                             if text == "true":
                                 #Viewer.menucommandsound.play()
                                 Viewer.fullscreen = True
@@ -850,21 +897,21 @@ class Viewer(object):
                 # ------- pressed and released key ------
 
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        running = False
-                    if event.key == pygame.K_e:
-                        Explosion(posvector = p, red = r, blue = b, green = g, maxsparks = maxsparks2, maxspeed = maxspeed2, maxangle = maxangle2)
-                    if event.key == pygame.K_t:
-                        p5 = pygame.math.Vector2(Viewer.width//2, -Viewer.height//2)
-                        Explosion(posvector = p5, maxlifetime = 500, mousegravity = True, minsparks = 1500, maxsparks = 2000, bounce = False, kill = True)
-                    if event.key == pygame.K_p:
-                        p4 = pygame.math.Vector2(700, -250)
-                        Explosion(posvector = p4, green = g, red = r, blue = b, maxspeed = 500, minspeed = 10, maxsparks = 3000, minsparks = 3000)
-                    if event.key == pygame.K_w:
-                        Explosion(posvector = p, red = r, blue = b, green = g, minsparks = 1000, maxsparks = 5000, maxspeed = maxspeed2, minangle = 80, maxangle = 100)
-                    if event.key == pygame.K_r:
-                        p3 = pygame.math.Vector2(700, -400)
-                        Explosion(posvector = p3, green = g, red = r, blue = b, maxlifetime = 100, maxspeed = 500, minspeed = 500, maxsparks = 2000, minsparks = 2000)
+                    #if event.key == pygame.K_ESCAPE:
+                    #    running = False
+                    #if event.key == pygame.K_e:
+                    #    Explosion(posvector = p, red = r, blue = b, green = g, maxsparks = maxsparks2, maxspeed = maxspeed2, maxangle = maxangle2)
+                    #if event.key == pygame.K_t:
+                    #    p5 = pygame.math.Vector2(Viewer.width//2, -Viewer.height//2)
+                    #    Explosion(posvector = p5, maxlifetime = 500, mousegravity = True, minsparks = 1500, maxsparks = 2000, bounce = False, kill = True)
+                    #if event.key == pygame.K_p:
+                    #    p4 = pygame.math.Vector2(700, -250)
+                    #    Explosion(posvector = p4, green = g, red = r, blue = b, maxspeed = 500, minspeed = 10, maxsparks = 3000, minsparks = 3000)
+                    #if event.key == pygame.K_w:
+                    #    Explosion(posvector = p, red = r, blue = b, green = g, minsparks = 1000, maxsparks = 5000, maxspeed = maxspeed2, minangle = 80, maxangle = 100)
+                    #if event.key == pygame.K_g:
+                    #    p3 = pygame.math.Vector2(700, -400)
+                    #    Explosion(posvector = p3, green = g, red = r, blue = b, maxlifetime = 100, maxspeed = 500, minspeed = 500, maxsparks = 2000, minsparks = 2000)
                     if event.key == pygame.K_d:
                         v = pygame.math.Vector2(50, 0)
                         Ufo(move = v)
@@ -891,6 +938,13 @@ class Viewer(object):
                         if not self.cheatmode and self.cheatcode == "123":
                             self.cheatcode=""
                             self.cheatmode = True
+                    if event.key == pygame.K_r:
+                        if self.cheatmode == True:
+                            self.machine_gun = not self.machine_gun
+                            self.cheatcode = ""
+                    if event.key == pygame.K_v:
+                        self.menu_run()
+                        
 
 
             # ------------ pressed keys ------
@@ -909,6 +963,16 @@ class Viewer(object):
                 p2 = pygame.math.Vector2(x, -Viewer.height + 60)
                 #Explosion(posvector = p2, red = r, blue = b, green = g, maxlifetime = 100, maxsparks = 1, minsparks = 1, minspeed = 300, maxspeed = 300, maxangle = 90, minangle = 90, kill = True, bounce = False)
                 Missle(pos = p2, move = pygame.math.Vector2(0, random.randint(250, 350)), angle = 90)
+                
+            if self.machine_gun == True:
+            #    if left:
+                    x = pygame.mouse.get_pos()[0]
+                    p2 = pygame.math.Vector2(x, -Viewer.height + 60)
+                    #Explosion(posvector = p2, red = r, blue = b, green = g, maxlifetime = 100, maxsparks = 1, minsparks = 1, minspeed = 300, maxspeed = 300, maxangle = 90, minangle = 90, kill = True, bounce = False)
+                    Missle(pos = p2, move = pygame.math.Vector2(0, random.randint(250, 350)), angle = 90)
+                
+                
+                
 
 
             if oldright and not right:
@@ -1013,6 +1077,16 @@ class Viewer(object):
                     for l in crashgroup:
                         Explosion(l.pos, red=200, green=0, blue=20)
                         p.hitpoints -= 1
+                        
+            #----- collision detection between Player and BadBomb
+            for p in self.playergroup:
+                    crashgroup=pygame.sprite.spritecollide(p,
+                           self.badbombgroup, False,
+                           pygame.sprite.collide_mask)
+                    for b in crashgroup:
+                        Explosion(b.pos, red=0, green=50, blue=255,maxsparks=500)
+                        p.hitpoints -= 5
+                        b.kill()
                    
 
             
